@@ -17,22 +17,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
-import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMException;
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.cesecore.certificates.util.AlgorithmConstants;
 import org.cesecore.certificates.util.AlgorithmTools;
+import org.cesecore.keys.util.KeyTools;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -200,11 +191,9 @@ public final class CAConstants {
     private static KeyPair getPreSignKeyPair(final String sigAlg, final PublicKey caPublicKey) {
         // A switch to use different keys depending on the sigAlg so we can sign using the CAs signature algorithm
         final String keyAlg = AlgorithmTools.getKeyAlgorithmFromSigAlg(sigAlg);
-        StringReader reader;
         switch (keyAlg) {
             case AlgorithmConstants.KEYALGORITHM_RSA:
-                reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_RSA_PRIV);
-                break;
+                return KeyTools.getKeyPairFromPEM(CAConstants.PRESIGN_VALIDATION_KEY_RSA_PRIV);
             case AlgorithmConstants.KEYALGORITHM_EC:
             case AlgorithmConstants.KEYALGORITHM_ECDSA:
                 final byte[] encodedKey = caPublicKey.getEncoded();
@@ -212,46 +201,21 @@ public final class CAConstants {
                 final AlgorithmIdentifier algorithmIdentifier = spki.getAlgorithm();
                 final ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) algorithmIdentifier.getParameters();
                 if (oid.equals(ECNamedCurveTable.getOID("secp256r1"))) {
-                    reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_EC_SECP256R1_PRIV);
-                    break;
+                    return KeyTools.getKeyPairFromPEM(PRESIGN_VALIDATION_KEY_EC_SECP256R1_PRIV);
                 } else if (oid.equals(ECNamedCurveTable.getOID("secp384r1"))) {
-                    reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_EC_SECP384R1_PRIV);
-                    break;
+                    return KeyTools.getKeyPairFromPEM(CAConstants.PRESIGN_VALIDATION_KEY_EC_SECP384R1_PRIV);
                 } else {
                     log.warn("Cannot get EC pre-sign key for CA sign key with OID " + oid.toString() + ". Note that only P-256 and P-384 is supported.");
                     return null;
                 }
             case AlgorithmConstants.KEYALGORITHM_DSA:
-                reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_DSA_PRIV);
-                break;
+                return KeyTools.getKeyPairFromPEM(CAConstants.PRESIGN_VALIDATION_KEY_DSA_PRIV);
             case AlgorithmConstants.KEYALGORITHM_ED25519:
-                reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_ED25519_PRIV);
-                break;
+                return KeyTools.getKeyPairFromPEM(CAConstants.PRESIGN_VALIDATION_KEY_ED25519_PRIV);
             case AlgorithmConstants.KEYALGORITHM_ED448:
-                reader = new StringReader(CAConstants.PRESIGN_VALIDATION_KEY_ED448_PRIV);
-                break;
+                return KeyTools.getKeyPairFromPEM(CAConstants.PRESIGN_VALIDATION_KEY_ED448_PRIV);
             default:
                 return null;
-        }
-        try (PEMParser pemParser = new PEMParser(reader)) {
-            Object obj = pemParser.readObject();
-            if (obj instanceof PEMKeyPair) {
-                final PEMKeyPair pemKeyPair = (PEMKeyPair) obj;
-                final JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME);
-                return keyConverter.getKeyPair(pemKeyPair);
-            } else {
-                final PrivateKeyInfo edPrivInfo = (PrivateKeyInfo)obj;
-                final JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME);
-                try {
-                    final EdDSAPrivateKey edPrivKey = (EdDSAPrivateKey)keyConverter.getPrivateKey(edPrivInfo);
-                    final EdDSAPublicKey edPubKey = edPrivKey.getPublicKey();
-                    return new KeyPair(edPubKey, edPrivKey);
-                } catch (PEMException e) {
-                    throw new IllegalStateException("No hard coded presign key available for " + sigAlg);
-                }
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("IOException parsing hard coded presign key for " + sigAlg + ". This should never happen: ", e);
         }
     }
 }
