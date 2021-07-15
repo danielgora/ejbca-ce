@@ -732,18 +732,23 @@ public class X509CAUnitTest extends X509CAUnitTestBase {
                     EndEntityInformation endEntityInformation, X509Certificate certificate) throws ValidationException {
                 switch (phase) {
                 case DATA_VALIDATION:
-                    throw new ValidationException("DATA_VALIDATION");                    
+                    throw new ValidationException("DATA_VALIDATION");
                 case CERTIFICATE_VALIDATION:
-                    throw new ValidationException("CERTIFICATE_VALIDATION");                    
+                    throw new ValidationException("CERTIFICATE_VALIDATION");
                 case PRE_CERTIFICATE_VALIDATION:
-                    throw new ValidationException("PRE_CERTIFICATE_VALIDATION");                    
+                    throw new ValidationException("PRE_CERTIFICATE_VALIDATION");
                 case PRESIGN_CERTIFICATE_VALIDATION:
                     // check the certificate that it is signed with the hard coded key, and has poison extension
+                    PublicKey pubK;
                     try {
-                        PublicKey pubK = CAConstants.getPreSignPublicKey(certificate.getSigAlgName(),
+                        pubK = CAConstants.getPreSignPublicKey(certificate.getSigAlgName(),
                                 cryptoToken.getPublicKey(x509ca.getCAToken().getAliasFromPurpose(CATokenConstants.CAKEYPURPOSE_CERTSIGN)));
+                    } catch (CryptoTokenOfflineException e) {
+                        throw new ValidationException("cannot get CA key");
+                    }
+                    try {
                         certificate.verify(pubK);
-                    } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException | CryptoTokenOfflineException e) {
+                    } catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException | SignatureException e) {
                         fail("presign certificate should validate using the presign public key");
                     }
                     // Should not verify with CAs public key
@@ -761,9 +766,9 @@ public class X509CAUnitTest extends X509CAUnitTestBase {
                     assertEquals("authority key identifier should be from the hardcoded presign key", Base64.toBase64String(aki.getKeyIdentifier()), Base64.toBase64String(certAuthKeyID));
                     // No poison extension in presign certificate
                     assertNull("There must not be a CT poison extension in the presign certificate.", certificate.getExtensionValue(CertTools.PRECERT_POISON_EXTENSION_OID));
-                    throw new ValidationException("PRESIGN_CERTIFICATE_VALIDATION");                    
+                    throw new ValidationException("PRESIGN_CERTIFICATE_VALIDATION");
                 default:
-                    throw new ValidationException("default");                    
+                    throw new ValidationException("default");
                 }
             }
         });        
