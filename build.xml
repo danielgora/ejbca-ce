@@ -34,7 +34,7 @@
     <!-- =================================================================== -->
     <!-- Clean ALL                                                           -->
     <!-- =================================================================== -->
-    <target name="clean" depends="deprecated:check">
+    <target name="clean" depends="deprecated:check, clean-bitnami">
         <delete dir="${dist.dir}" />
         <delete dir="${reports.base.dir}" />
         <delete dir="${apidoc}" />
@@ -44,8 +44,14 @@
         <ant antfile="modules/build.xml" target="clean" inheritall="true" inheritrefs="true"/>
     </target>
 
+    <target name="clean-bitnami">
+        <delete>
+            <fileset dir="." includes="**.tar.gz*" />
+        </delete>
+    </target>
+
     <!-- =================================================================== -->
-    <!-- Clean Dist dirs                                                           -->
+    <!-- Clean Dist dirs                                                     -->
     <!-- =================================================================== -->
     <target name="cleanDistDir" depends="deprecated:check">
          <delete dir="${dist.dir}" />
@@ -54,7 +60,7 @@
 
 
     <!-- =================================================================== -->
-    <!-- Clean Reports and Screenshots                                                           -->
+    <!-- Clean Reports and Screenshots                                       -->
     <!-- =================================================================== -->
     <target name="cleanReports" description="Clean up this module">
         <delete dir="${reports.base.dir}/images"/>
@@ -65,8 +71,29 @@
     <!-- =================================================================== -->
     <!-- Build ALL                                                           -->
     <!-- =================================================================== -->
-    <target name="build" depends="deprecated:check, fail-unless-appserver-detected, testforgnujava, ejbca.ear" description="Builds EJBCA"/>
+    <target name="build"
+            depends="deprecated:check, fail-unless-appserver-detected, testforgnujava, ejbca.ear"
+            description="Builds EJBCA"/>
 
+    <!-- Build EJBCA for Bitnami container -->
+    <target name="build-bitnami" depends="update-gitrev, update-edition, build"
+        description="Builds EJBCA release for Adax-Bitnami container">
+
+        <tar destfile="ejbca-${app.version.number}-linux-amd64-debian-10.tar.gz"
+             compression="gzip" longfile="gnu">
+            <tarfileset dir="."
+                        prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
+                <include name="dist/**"/>
+                <include name="bin/**"/>
+            </tarfileset>
+            <tarfileset dir="doc"
+                        prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
+                <include name="sql-scripts/**"/>
+            </tarfileset>
+        </tar>
+        <checksum file="ejbca-${app.version.number}-linux-amd64-debian-10.tar.gz"
+                  algorithm="SHA-256" forceOverwrite="yes" format="CHECKSUM" fileext=".sha256"/>
+    </target>
     <!--
       Installs EJBCA by creating an initial CA and generating certs for
       SSL and the super administrator.
@@ -398,8 +425,8 @@
         <copy overwrite="true" todir="${eardd.src}/META-INF" failonerror="false">
             <fileset dir="${ejbca.home}/conf">
                   <include name="log4j-${appserver.subtype}.xml"/>
-               </fileset>
-               <mapper type="regexp" from="log4j-.*" to="log4j.xml"/>
+            </fileset>
+            <mapper type="regexp" from="log4j-.*" to="log4j.xml"/>
         </copy>
         <war-replacement-in-module
             replacement-tag="!--@doc.war@-->"
@@ -1141,7 +1168,7 @@
                 <!-- Only include SSH module if specified -->
                 <exclude unless="build.contains.ssh" name="modules/ssh/**"/>
 
-            <!-- List of subcommands for ejbca.sh script that must be hidden when we are running on limited ejbca (va/ra) installation. -->
+                <!-- List of subcommands for ejbca.sh script that must be hidden when we are running on limited ejbca (va/ra) installation. -->
                 <!-- The excluded parts are listed in the ticket ECA-7904 and could be updated accordingly if needed.   -->
                 <exclude name="modules/ejbca-ejb-cli/src/org/ejbca/ui/cli/config/**/*.java" unless="running.full.ejbca"/>
                 <exclude name="modules/ejbca-ejb-cli/src/org/ejbca/ui/cli/ca/**/CaEditCaCommand.java" unless="running.full.ejbca"/>
@@ -1418,7 +1445,6 @@ SHA-256 checksum: ${cesecorebinSHA256}
         <delete file="gitlog.out"/>
         <antcall target="update-gitrev-updatefile" /> <!-- do update of file only if property is set -->
     </target>
-
 
     <target name="update-gitrev-updatefile" if="Revision">
         <replaceregexp file="src/internal.properties" encoding="UTF-8" match='(git.revision=).*'
