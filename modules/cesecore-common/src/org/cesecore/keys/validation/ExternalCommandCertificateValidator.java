@@ -209,7 +209,7 @@ public class ExternalCommandCertificateValidator extends CertificateValidatorBas
                     for (String str : out) {
                         if (str.startsWith(ExternalProcessTools.STDOUT_PREFIX)) {
                             if (stdOutput == null) {
-                                stdOutput = str;
+                                stdOutput = str.replaceFirst(ExternalProcessTools.STDOUT_PREFIX, StringUtils.EMPTY);
                             } else {
                                 stdOutput += "\n" + str;
                             }
@@ -224,7 +224,7 @@ public class ExternalCommandCertificateValidator extends CertificateValidatorBas
                     for (String str : out) {
                         if (str.startsWith(ExternalProcessTools.ERROUT_PREFIX)) {
                             if (errOutput == null) {
-                                errOutput = str;
+                                errOutput = str.replaceFirst(ExternalProcessTools.ERROUT_PREFIX, StringUtils.EMPTY);
                             } else {
                                 errOutput += "\n" + str;
                             }
@@ -236,14 +236,12 @@ public class ExternalCommandCertificateValidator extends CertificateValidatorBas
                 }
                 final int exitCode = Integer.parseInt(out.get(0).replaceFirst(ExternalProcessTools.EXIT_CODE_PREFIX, StringUtils.EMPTY));
                 if (exitCode != 0 && isFailOnErrorCode()) { // Validation failed: -1 is command could not be found or access denied.
-                    messages.add("Invalid: External command exit code was " + exitCode);
                     if (errOutput != null) {
-                        messages.add("ERROUT was: " + errOutput);
+                        messages.add(errOutput);
                     }
                 } else if (isFailOnStandardError() && ExternalProcessTools.containsErrout(out)) {
-                    messages.add("Invalid: External command logged to ERROUT. Exit code was " + exitCode);
                     if (errOutput != null) {
-                        messages.add("ERROUT was: " + errOutput);
+                        messages.add(errOutput);
                     }
                 }
             } catch(Exception e2) { // In case exit code could not be parsed.

@@ -570,15 +570,15 @@ public class KeyValidatorSessionBean implements KeyValidatorSessionLocal, KeyVal
                         final ExternalScriptsAllowlist externalScriptsWhitelist = ExternalScriptsAllowlist.fromText(
                                 externalScriptsConfiguration.getExternalScriptsWhitelist(),
                                 externalScriptsConfiguration.getIsExternalScriptsWhitelistEnabled());
-                        final List<String> messages = validator.validate(ca, certificate, externalScriptsWhitelist);
-                        if (messages.size() > 0) { // Evaluation has failed.
-                            final String message = intres.getLocalizedMessage("validator.certificate.validation_failed", name, messages);
+                        final List<String> validator_msgs = validator.validate(ca, certificate, externalScriptsWhitelist);
+                        if (validator_msgs.size() > 0) { // Evaluation has failed.
+                            final String message = intres.getLocalizedMessage("validator.certificate.validation_failed", name, validator_msgs);
                             final Map<String, Object> details = new LinkedHashMap<String, Object>();
                             details.put("msg", message);
                             auditSession.log(EventTypes.VALIDATOR_VALIDATION_FAILED, EventStatus.FAILURE, ModuleTypes.VALIDATOR, ServiceTypes.CORE,
                                     authenticationToken.toString(), String.valueOf(ca.getCAId()), fingerprint, endEntityInformation.getUsername(),
                                     details);
-                            performValidationFailedActions(validator.getFailedAction(), message, validator.getValidatorTypeIdentifier());
+                            performValidationFailedActions(validator.getFailedAction(), validator_msgs.get(0), validator.getValidatorTypeIdentifier());
                         } else {
                             final String message = intres.getLocalizedMessage("validator.certificate.validation_successful", name, fingerprint);
                             log.info(message);
