@@ -81,14 +81,25 @@
 
         <tar destfile="ejbca-${app.version.number}-linux-amd64-debian-10.tar.gz"
              compression="gzip" longfile="gnu">
-            <tarfileset dir="."
+            <tarfileset dir="." filemode="644" dirmode="755"
                         prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
                 <include name="dist/**"/>
                 <include name="bin/**"/>
+                <exclude name="**/*.sh"/>
             </tarfileset>
-            <tarfileset dir="doc"
+            <tarfileset dir="." filemode="755" dirmode="755"
+                        prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
+                <include name="dist/*.sh"/>
+                <include name="bin/*.sh"/>
+            </tarfileset>
+            <tarfileset dir="doc" filemode="644" dirmode="755"
                         prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
                 <include name="sql-scripts/**"/>
+                <exclude name="**/*.sh"/>
+            </tarfileset>
+            <tarfileset dir="doc" filemode="755" dirmode="755"
+                        prefix="ejbca-${app.version.number}-linux-amd64-debian-10/files/ejbca">
+                <include name="**/*.sh"/>
             </tarfileset>
         </tar>
         <checksum file="ejbca-${app.version.number}-linux-amd64-debian-10.tar.gz"
