@@ -1,3 +1,5 @@
+-include Makefile.inc
+
 # doc.update=false is necessary to avoid trying to pull documentation from the
 # primekey server.
 JAVAOPTS += -Ddoc.update=false
@@ -8,7 +10,8 @@ export APPSRV_HOME=/opt/bitnami/wildfly
 # Path to the Adax git repo for the bitnami docker container for ejbca
 export CONTAINER_HOME=/home/dg/ejbca/adax-docker-ejbca
 
-export INSTALL_DIR=tmp/bitnami/pkg/cache
+export PREINSTALLDIR=$(CONTAINER_HOME)/7/debian-10/prebuildfs/
+export INSTALLDIR=$(PREINSTALLDIR)/pkgcache
 
 .PHONY: all build clean install tags cscope
 
@@ -27,9 +30,11 @@ clean:
 	ant clean
 	rm -f tags cscope.files
 
-install: build
-	[[ -d $(CONTAINER_HOME) ]] && \
-	cp -p ejbca-*.tar.gz* $(CONTAINER_HOME)/7/debian-10/prebuildfs/pkgcache
+install: build Makefile.inc
+	@echo -e "\nCopying tarball to $(INSTALLDIR)\n"
+	@[[ -d $(PREINSTALLDIR) ]] && \
+		mkdir -p $(INSTALLDIR) && \
+		cp -p ejbca-*.tar.gz* $(INSTALLDIR)
 
 tags:
 	ctags -R . 2>/dev/null
@@ -37,3 +42,6 @@ tags:
 cscope:
 	find . -iname '*.java' > cscope.files
 	cscope -b
+
+Makefile.inc: configure
+	./configure

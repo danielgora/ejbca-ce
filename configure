@@ -1,0 +1,20 @@
+
+# Default location of 'adax-docker-ejbca'
+# Adax version of bitnami EJBCA docker container
+dflt_docker=/home/dg/ejbca/adax-docker-ejbca
+
+while :
+do
+    read -e -p "Enter Adax Bitnami docker source directory (dflt=$dflt_docker): " dir
+    eval dir=${dir:-$dflt_docker}
+
+    if [ -d ${dir}/7/debian-10/prebuildfs/pkgcache ]
+    then
+        break
+    fi
+    echo "Could not find $dir/7/debian-10/prebuildfs/pkgcache!"
+    echo "Try again..."
+    echo ""
+done
+
+echo "export CONTAINER_HOME=$dir" > Makefile.inc
