@@ -75,6 +75,7 @@ import org.ejbca.core.model.ca.AuthLoginException;
 import org.ejbca.core.model.ra.NotFoundException;
 import org.ejbca.core.model.ra.UsernameGenerator;
 import org.ejbca.core.model.ra.UsernameGeneratorParams;
+import org.ejbca.core.model.ra.raadmin.EndEntityProfile;
 import org.ejbca.core.model.ra.raadmin.EndEntityProfileNotFoundException;
 import org.ejbca.core.model.ra.raadmin.EndEntityProfileValidationException;
 import org.ejbca.core.protocol.cmp.authentication.HMACAuthenticationModule;
@@ -288,6 +289,7 @@ public class CrmfMessageHandler extends BaseCmpMessageHandler implements ICmpMes
 	 * @throws CesecoreException 
 	 */
 	private ResponseMessage handleRaMessage(final CrmfRequestMessage crmfreq, boolean authenticated) throws AuthorizationDeniedException, EjbcaException, CesecoreException {
+        final EndEntityProfile eeProfile;
         final int eeProfileId;        // The endEntityProfile to be used when adding users in RA mode.
         final String certProfileName;  // The certificate profile to use when adding users in RA mode.
         final int certProfileId;
@@ -397,9 +399,31 @@ public class CrmfMessageHandler extends BaseCmpMessageHandler implements ICmpMes
                 }
             }
         }
+        eeProfile = endEntityProfileSession.getEndEntityProfileNoClone(eeProfileId);
+        if (eeProfile.isValidityStartTimeUsed())
+        {
+            if (ei == null)
+                ei = new ExtendedInformation();
+            ei.setCertificateStartTime(eeProfile.getValidityStartTime());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting End Entity Info start time to : " + eeProfile.getValidityStartTime());
+            }
+        }
+        if (eeProfile.isValidityEndTimeUsed())
+        {
+            if (ei == null)
+                ei = new ExtendedInformation();
+            ei.setCertificateEndTime(eeProfile.getValidityEndTime());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Setting End Entity Info end time to : " + eeProfile.getValidityEndTime());
+            }
+        }
+
+        // Create a new End Entity object
         final EndEntityInformation userdata = new EndEntityInformation(username, dnname.toString(), caId, altNames, email,
                 EndEntityConstants.STATUS_NEW, new EndEntityType(EndEntityTypes.ENDUSER), eeProfileId, certProfileId, null, null,
                 SecConst.TOKEN_SOFT_BROWSERGEN, ei);
+
         userdata.setPassword(pwd);
         // Set so we have the right params in the call to processCertReq. 
         // Username and pwd in the EndEntityInformation and the IRequestMessage must match
