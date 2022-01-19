@@ -10,8 +10,8 @@ export APPSRV_HOME=/opt/bitnami/wildfly
 # Path to the Adax git repo for the bitnami docker container for ejbca
 export CONTAINER_HOME=/home/dg/ejbca/adax-docker-ejbca
 
-export PREINSTALLDIR=$(CONTAINER_HOME)/7/debian-10/prebuildfs/
-export INSTALLDIR=$(PREINSTALLDIR)/pkgcache
+export PREINSTALLDIR=$(CONTAINER_HOME)/7/debian-10/prebuildfs
+export INSTALLDIR=$(PREINSTALLDIR)/opt/bitnami/pkgcache
 
 .PHONY: all build clean install tags cscope
 

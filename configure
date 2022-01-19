@@ -8,11 +8,11 @@ do
     read -e -p "Enter Adax Bitnami docker source directory (dflt=$dflt_docker): " dir
     eval dir=${dir:-$dflt_docker}
 
-    if [ -d ${dir}/7/debian-10/prebuildfs/pkgcache ]
+    if [ -d ${dir}/7/debian-10/prebuildfs/opt/bitnami/pkgcache ]
     then
         break
     fi
-    echo "Could not find $dir/7/debian-10/prebuildfs/pkgcache!"
+    echo "Could not find $dir/7/debian-10/prebuildfs/opt/bitnami/pkgcache!"
     echo "Try again..."
     echo ""
 done
